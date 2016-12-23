@@ -42,32 +42,34 @@ public:
       }
       cout << ")\n";
 
+      {
+        CXXRecordDecl::method_iterator iter = D->method_begin();
+        if (iter != D->method_end()) {
+          cout << " :methods\n  (";
+          for (;;) {
+            printMethod(llvm::dyn_cast<CXXMethodDecl>(*iter));
+            if (++iter == D->method_end())
+              break;
+            cout << ")\n   ";
+          }
+          cout << ")\n";
+        }
+      }
 
       cout << ")\n";
     }
     return true;
   }
 
-  // bool VisitFunctionDecl(FunctionDecl *D) {
-  //   if(qtSourceP(D)) {
-  //     std::cout << llvm::dyn_cast<DeclContext>(D)->getDeclKindName() << ' ';
-  //     std::cout << D->getReturnType().getAsString() << ' ' ;
-
-  //     std::cout << D->getQualifiedNameAsString() << '(';
-      // FunctionDecl::param_iterator iter;
-      // for( iter = D->param_begin(); iter != D->param_end(); iter++) {
-      //   ParmVarDecl *decl = llvm::dyn_cast<clang::ParmVarDecl>(*iter);
-
-      //   std::cout << ' ' << decl->getType().getAsString() << ' ' << decl->getQualifiedNameAsString() << ',';
-
-      // }
-  //     std::cout << ')' << std::endl;
-  //   }
-
-  //   return true;
-  // }
-
 private:
+
+  void printMethod(CXXMethodDecl *D) {
+    cout << '(';
+    cout << '"' << D->getNameAsString() << "\" \"" << D->getReturnType().getAsString() << "\" ";
+    printFunParams(D);
+    cout << ')';
+  }
+
   void printFunParams(FunctionDecl *D) {
     FunctionDecl::param_iterator iter = D->param_begin();
     cout << '(';
