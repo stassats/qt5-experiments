@@ -23,6 +23,21 @@ class myASTVisitor : public RecursiveASTVisitor<myASTVisitor> {
 public:
   myASTVisitor (ASTContext *Context) : Context(Context) {}
 
+  bool VisitTypedefDecl (TypedefDecl *D) {
+    if(qtSourceP(D)) {
+      cout << "(:typedef \"" << D->getUnderlyingType().getAsString() << "\" \""
+           << D->getQualifiedNameAsString() << "\")\n";
+    }
+    return true;
+  }
+
+  bool VisitCXXRecordDecl (CXXRecordDecl *D) {
+    if(qtSourceP(D) && D->isCompleteDefinition() && D->isClass()) {
+      std::cout << D->getQualifiedNameAsString() << endl;
+    }
+    return true;
+  }
+
   bool VisitFunctionDecl(FunctionDecl *D) {
     if(qtSourceP(D)) {
       std::cout << llvm::dyn_cast<DeclContext>(D)->getDeclKindName() << ' ';
@@ -44,8 +59,9 @@ public:
 
 private:
 
-  bool qtSourceP(DeclaratorDecl *decl) {
-    SourceLocation loc = decl->getLocStart();
+  
+
+  bool qtSourceP(SourceLocation loc) {
     SourceManager &SM = Context->getSourceManager();
     if (!loc.isFileID()) {
       loc = SM.getExpansionLoc(loc);
@@ -53,6 +69,14 @@ private:
     string file = SM.getFilename(loc).str();
 
     return file.find("/qt5/Qt") != string::npos;
+  }
+
+  bool qtSourceP(DeclaratorDecl *decl) {
+    return qtSourceP(decl->getLocStart());
+  }
+
+  bool qtSourceP(TypeDecl *decl) {
+    return qtSourceP(decl->getLocStart());
   }
 
 };
