@@ -33,32 +33,68 @@ public:
 
   bool VisitCXXRecordDecl (CXXRecordDecl *D) {
     if(qtSourceP(D) && D->isCompleteDefinition() && D->isClass()) {
-      std::cout << D->getQualifiedNameAsString() << endl;
-    }
-    return true;
-  }
-
-  bool VisitFunctionDecl(FunctionDecl *D) {
-    if(qtSourceP(D)) {
-      std::cout << llvm::dyn_cast<DeclContext>(D)->getDeclKindName() << ' ';
-      std::cout << D->getReturnType().getAsString() << ' ' ;
-
-      std::cout << D->getQualifiedNameAsString() << '(';
-      FunctionDecl::param_iterator iter;
-      for( iter = D->param_begin(); iter != D->param_end(); iter++) {
-        ParmVarDecl *decl = llvm::dyn_cast<clang::ParmVarDecl>(*iter);
-
-        std::cout << ' ' << decl->getType().getAsString() << ' ' << decl->getQualifiedNameAsString() << ',';
+      cout << "(:class \"" << D->getQualifiedNameAsString() << "\"\n";
+      cout << " :constructors (";
+      for (CXXRecordDecl::ctor_iterator iter = D->ctor_begin(); 
+           iter != D->ctor_end(); iter++) {
+        printFunParams(llvm::dyn_cast<CXXConstructorDecl>(*iter));
 
       }
-      std::cout << ')' << std::endl;
-    }
+      cout << ")\n";
 
+
+      cout << ")\n";
+    }
     return true;
   }
 
-private:
+  // bool VisitFunctionDecl(FunctionDecl *D) {
+  //   if(qtSourceP(D)) {
+  //     std::cout << llvm::dyn_cast<DeclContext>(D)->getDeclKindName() << ' ';
+  //     std::cout << D->getReturnType().getAsString() << ' ' ;
 
+  //     std::cout << D->getQualifiedNameAsString() << '(';
+      // FunctionDecl::param_iterator iter;
+      // for( iter = D->param_begin(); iter != D->param_end(); iter++) {
+      //   ParmVarDecl *decl = llvm::dyn_cast<clang::ParmVarDecl>(*iter);
+
+      //   std::cout << ' ' << decl->getType().getAsString() << ' ' << decl->getQualifiedNameAsString() << ',';
+
+      // }
+  //     std::cout << ')' << std::endl;
+  //   }
+
+  //   return true;
+  // }
+
+private:
+  void printFunParams(FunctionDecl *D) {
+    FunctionDecl::param_iterator iter = D->param_begin();
+    cout << '(';
+    if (iter != D->param_end()) {
+      for(;;) {
+        ParmVarDecl *decl = llvm::dyn_cast<ParmVarDecl>(*iter);
+      
+        cout << "(\"" << decl->getType().getAsString() << "\" \"" 
+             << decl->getQualifiedNameAsString() << '"';
+        if (decl->hasDefaultArg()) {
+          LangOptions LangOpts;
+          LangOpts.CPlusPlus = true;
+          PrintingPolicy Policy(LangOpts);
+          string str;
+          llvm::raw_string_ostream s(str);
+          decl->getDefaultArg()->printPretty(s, 0, Policy);
+          cout << " :default \"" << s.str() << '"';
+        }
+        cout << ')';
+        
+        if (++iter == D->param_end())
+          break;
+        cout << ' ';
+      }
+    }
+    cout << ')';
+  }
   
 
   bool qtSourceP(SourceLocation loc) {
